@@ -1,76 +1,50 @@
 package mtparser
 
-import (
-	"bytes"
-	"io"
-)
+import "errors"
 
-func (t *parser) ReadBlock() Block {
+func (s *Parser) scanBlocks() error {
 	var blk Block
-	r := t.r
-	buf := bytes.NewBufferString("")
-	key := ""
 
-L:
-	for {
-		c, _, e := r.ReadRune()
+	mp := map[string]Node{}
+	s.blk.Val = []Block{}
+	bin := len(s.Blocks)
 
-		if e == io.EOF {
-			break L
-		} else {
-			check(e)
+	for i := 0; i <= 100; i++ {
+		if s.Scan() != '{' {
+			return errors.New(s.ErrMessage('{', true))
 		}
 
-		switch c {
-		case 123: // {
-			if len(key) == 0 {
-				continue
+		s.Scan()
+		blk.Key = s.TokenText()
+
+		if s.Scan() != ':' {
+			return errors.New(s.ErrMessage(':', true))
+		}
+
+		blk.Val = ""
+		if s.Scan() != '}' {
+			blk.Val = s.TokenText()
+
+			if s.Scan() != '}' {
+				return errors.New(s.ErrMessage('}', true))
 			}
+		}
 
-			val := []Block{}
-			for { // Keep processing next until }
-				val = append(val, t.ReadBlock())
-				if t.Peek() != 123 {
-					break
-				}
-			}
-			blk.Key = key
-			blk.Val = val
-			t.blockTerminus()
+		mp[blk.Key] = Node{
+			Val: blk.Val.(string),
+			Blk: bin,
+			Ind: i,
+		}
+		s.blk.Val = append(s.blk.Val.([]Block), *&blk)
 
-			break L
-		case 125: // }
-			blk.Key = key
-			blk.Val = buf.String()
-
-			break L
-		case 58: // :
-			if len(key) == 0 {
-				key = buf.String()
-				buf.Reset()
-			}
-
-			switch key {
-			case "1":
-				blk.Key = key
-				blk.Val = t.readBasicHeader()
-				break L
-			case "2":
-				blk.Key = key
-				blk.Val = t.readAppHeader()
-				break L
-			case "4":
-				blk.Key = key
-				blk.Val = t.readBody()
-				break L
-			}
-
+		if s.Peek() == '}' {
 			break
-		default:
-			buf.WriteRune(c)
+		}
+		if i == 100 {
+			return errors.New("Unclosed block, expected }")
 		}
 	}
 
-	t.Blk = blk
-	return t.Blk
+	s.Map[s.blk.Key] = mp
+	return nil
 }

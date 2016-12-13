@@ -1,42 +1,65 @@
 package mtparser
 
-import "bytes"
+import "errors"
 
-func (t *parser) readBody() []Field {
-	var flds []Field
-	r := t.r
-	buf := bytes.NewBufferString("")
-	key := ""
-L:
-	for {
-		c, _, e := r.ReadRune()
-		check(e)
+func (s *Parser) scanBody() error {
+	var fld Field
+	var p rune
+	mp := map[string]Node{}
+	bin := len(s.Blocks)
 
-		switch c {
-		case 10: // \n
-			if buf.Len() == 0 && len(key) == 0 {
-				break
-			}
+	s.blk.Val = []Field{}
 
-			if t.Peek() == 58 { // :
-				flds = append(flds, Field{
-					Key: key,
-					Val: buf.String(),
-				})
-				break
-			}
-		case 58: // :
-			if !(buf.Len() == 0 && len(key) == 0) {
-				key = buf.String()
-				buf.Reset()
-			}
-			continue L
-		case 45: // -
-			break L
+	if s.Scan() != '\n' {
+		return errors.New(s.ErrMessage('\n', true))
+	}
+
+	for i2 := 0; s.Peek() != '}'; i2++ {
+
+		if s.Scan() != ':' {
+			return errors.New(s.ErrMessage(':', true))
 		}
 
-		buf.WriteRune(c)
+		s.Scan()
+		fld.Key = s.TokenText()
+
+		if s.Scan() != ':' {
+			return errors.New(s.ErrMessage(':', true))
+		}
+
+		fld.Val = ""
+
+		for i := 0; i <= 100; i++ {
+			t := s.Scan()
+			p = s.Peek()
+
+			if p == '-' && t == '\n' {
+				break
+			}
+			if p == ':' {
+				break
+			}
+
+			fld.Val += s.TokenText()
+
+			if i == 100 {
+				return errors.New("Unclosed body, expected -")
+			}
+		}
+
+		mp[fld.Key] = Node{
+			Val: fld.Val,
+			Blk: bin,
+			Ind: i2,
+		}
+		s.blk.Val = append(s.blk.Val.([]Field), *&fld)
+
+		if p == '-' {
+			s.Scan()
+			break
+		}
 	}
-	t.blockTerminus()
-	return flds
+
+	s.Map[s.blk.Key] = mp
+	return nil
 }
