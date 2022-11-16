@@ -1,0 +1,14 @@
+.settings
+.git
+.idea
+*.iml
+.vscode
+.DS_Store
+internal/reports/*
+vendor
+buildInfo.json
+/.shuttle/
+/.dockerignore
+/main
+/local.env
+env.local

@@ -1,17 +1,25 @@
-package mtparser
+package parser
 
 import (
 	"bufio"
 	"errors"
 	"strconv"
-	"strings"
 	"text/scanner"
+
+	"github.com/lunarway/mtparser/internal/types"
 )
 
-func New(r *bufio.Reader) Parser {
+type Parser struct {
+	scanner.Scanner
+	blk       types.Block
+	Blocks    []types.Block
+	Map       ParserMap
+	ErrPrefix string
+}
+
+func newParser(r *bufio.Reader) Parser {
 	var s Parser
 	s.Init(r)
-	// s.Filename = "mt-message"
 	s.Mode = scanner.ScanIdents
 	s.Whitespace = 1<<'\t' | 1<<'\r'
 	s.IsIdentRune = func(ch rune, i int) bool {
@@ -36,18 +44,7 @@ func (s *Parser) ErrMessage(c rune, x bool) string {
 	return s.ErrPrefix + " " + xp + " '" + string(c) + "' at line " + ln + " column " + cl
 }
 
-// Parse an MT103 string. Return a result
-func ParseFromString(mt103 string) (mtParser Parser, err error) {
-
-	mtReader := strings.NewReader(mt103)
-	mtBufio := bufio.NewReader(mtReader)
-	mtParser = New(mtBufio)
-	err = mtParser.Parse()
-
-	return
-}
-
-func (s *Parser) Parse() error {
+func (s *Parser) parse() error {
 	var err error
 
 	for s.Peek() != scanner.EOF {
@@ -88,4 +85,13 @@ func (s *Parser) Parse() error {
 	}
 
 	return nil
+}
+
+func Parse(r *bufio.Reader) (*types.MTFile, error) {
+	p := newParser(r)
+	err := p.parse()
+	if err != nil {
+		return nil, err
+	}
+	return types.NewMTFile(p.Blocks), nil
 }

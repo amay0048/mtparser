@@ -1,12 +1,16 @@
-package mtparser
+package parser
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/lunarway/mtparser/internal/types"
+)
 
 func (s *Parser) scanBlocks() error {
-	var blk Block
+	var blk types.Block
 
 	mp := map[string]Node{}
-	s.blk.Val = []Block{}
+	s.blk.Val = []types.Block{}
 	bin := len(s.Blocks)
 
 	for i := 0; i <= 100; i++ {
@@ -35,7 +39,7 @@ func (s *Parser) scanBlocks() error {
 			Blk: bin,
 			Ind: i,
 		}
-		s.blk.Val = append(s.blk.Val.([]Block), *&blk)
+		s.blk.Val = append(s.blk.Val.([]types.Block), *&blk)
 
 		if s.Peek() == '}' {
 			break

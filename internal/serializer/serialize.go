@@ -1,24 +1,26 @@
-package mtserializer
+package serializer
 
 import (
 	"bytes"
 
-	"github.com/amay0048/mtparser/mtparser"
+	"github.com/lunarway/mtparser/internal/parser"
+	"github.com/lunarway/mtparser/internal/types"
 )
 
-type mtSerializer interface {
-	// Reads and returns an array of all blocks
-	Serialize() string
-	serializeHeader() string
-}
-
 type serializer struct {
-	Blk mtparser.Block // Most recent block.
-	m   []mtparser.Block
+	Blk types.Block // Most recent block.
+	m   []types.Block
 	buf *bytes.Buffer
 }
 
-func (s *serializer) Serialize() []byte {
+func newSerializer(m []types.Block) *serializer {
+	sl := new(serializer)
+	sl.m = m
+	sl.buf = bytes.NewBufferString("")
+	return sl
+}
+
+func (s *serializer) serialize() []byte {
 	for _, b := range s.m {
 		// hopefully this is synchronous
 		// TODO: come back and implement with atomic counters??
@@ -45,14 +47,14 @@ func (s *serializer) Serialize() []byte {
 }
 
 func (s *serializer) serializeHeader() {
-	for _, h := range s.Blk.Val.([]mtparser.Header) {
+	for _, h := range s.Blk.Val.([]parser.Header) {
 		s.buf.WriteString(h.Val)
 	}
 }
 
 func (s *serializer) serializeBody() {
 	s.buf.WriteString("\n")
-	for _, f := range s.Blk.Val.([]mtparser.Field) {
+	for _, f := range s.Blk.Val.([]parser.Field) {
 		s.buf.WriteString(":")
 		s.buf.WriteString(f.Key)
 		s.buf.WriteString(":")
@@ -63,7 +65,7 @@ func (s *serializer) serializeBody() {
 }
 
 func (s *serializer) serializeBlock() {
-	for _, b := range s.Blk.Val.([]mtparser.Block) {
+	for _, b := range s.Blk.Val.([]types.Block) {
 		s.buf.WriteString("{")
 		s.buf.WriteString(b.Key)
 		s.buf.WriteString(":")
@@ -72,9 +74,7 @@ func (s *serializer) serializeBlock() {
 	}
 }
 
-func New(m []mtparser.Block) *serializer {
-	sl := new(serializer)
-	sl.m = m
-	sl.buf = bytes.NewBufferString("")
-	return sl
+func Serialize(file *types.MTFile) []byte {
+	serializer := newSerializer(file.Blocks)
+	return serializer.serialize()
 }

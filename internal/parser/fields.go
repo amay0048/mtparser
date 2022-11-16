@@ -1,7 +1,6 @@
-package mtparser
+package parser
 
 import (
-	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -36,6 +35,14 @@ type reg struct {
 	lns string
 }
 
+func init() {
+	for _, v := range FieldPatterns {
+		p := v["pattern"]
+		rgx := regstrFromStructure(p, v["fieldNames"])
+		regexp.MustCompile(rgx)
+	}
+}
+
 func (s *Parser) BodyValueStructured(k string) []string {
 	var str string
 	var rgx *regexp.Regexp
@@ -55,7 +62,7 @@ func (s *Parser) BodyValueStructured(k string) []string {
 	return []string{}
 }
 
-func (s *Parser) ParseBody() error {
+func (s *Parser) parseBody() error {
 	var str string
 	var rgx *regexp.Regexp
 
@@ -84,15 +91,6 @@ func (s *Parser) ParseBody() error {
 	}
 
 	return nil
-}
-
-func TextRegexCompilation() {
-	for k, v := range FieldPatterns {
-		p := v["pattern"]
-		rgx := regstrFromStructure(p, v["fieldNames"])
-		fmt.Println("Field - ", k, " SWIFT - ", p, " REGEX - ", rgx)
-		regexp.MustCompile(rgx)
-	}
 }
 
 func regstrFromStructure(str string, keys string) string {
