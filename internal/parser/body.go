@@ -1,4 +1,4 @@
-package mtparser
+package parser
 
 import "errors"
 
