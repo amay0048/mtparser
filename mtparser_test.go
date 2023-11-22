@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/amay0048/mtparser/mtparser"
-	"github.com/amay0048/mtparser/mtserializer"
+	"github.com/hilmanHaris/mtparser/mtparser"
+	"github.com/hilmanHaris/mtparser/mtserializer"
 )
 
 func check(e error) {

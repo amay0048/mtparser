@@ -3,7 +3,7 @@ package mtserializer
 import (
 	"bytes"
 
-	"github.com/amay0048/mtparser/mtparser"
+	"github.com/hilmanHaris/mtparser/mtparser"
 )
 
 type mtSerializer interface {

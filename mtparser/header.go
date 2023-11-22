@@ -65,7 +65,9 @@ func (s *Parser) scanHeader() (err error) {
 			b.Reset()
 		}
 
-		if i == max {
+		x := s.Peek()
+
+		if i == max || x == '}' {
 			break
 		}
 

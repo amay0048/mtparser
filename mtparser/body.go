@@ -36,7 +36,7 @@ func (s *Parser) scanBody() error {
 			if p == '-' && t == '\n' {
 				break
 			}
-			if p == ':' {
+			if t == '\n' && p == ':' {
 				break
 			}
 
